@@ -1,0 +1,38 @@
+name: Build Ore View
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Fetch Forge 1.20.1 MDK (Gradle wrapper only)
+        run: |
+          curl -fL -o mdk.zip https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.2.0/forge-1.20.1-47.2.0-mdk.zip
+          unzip -q mdk.zip -d mdk-tmp
+          cp -r mdk-tmp/gradle .
+          cp mdk-tmp/gradlew mdk-tmp/gradlew.bat .
+          chmod +x gradlew
+          rm -rf mdk-tmp mdk.zip
+
+      - name: Build jar
+        run: ./gradlew build --no-daemon --stacktrace
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: oreview-jar
+          path: build/libs/*.jar
+          if-no-files-found: error
